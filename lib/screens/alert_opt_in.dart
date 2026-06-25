@@ -132,21 +132,31 @@ class _AlertOptInState extends State<AlertOptIn>
                 ),
               )
             else
+              // Landscape: push buttons all the way to the bottom edge so they
+              // don't overlap the "Stay tuned for special offers..." slate plate
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: size.height * 0.07,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: size.width * 0.35,
-                      child: _AcceptBtn(
-                          glowAnim: _glowAnim, onTap: _onAccept, compact: true),
+                bottom: 0,
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: size.width * 0.32,
+                          child: _AcceptBtn(
+                              glowAnim: _glowAnim,
+                              onTap: _onAccept,
+                              compact: true),
+                        ),
+                        const SizedBox(height: 4),
+                        _SkipBtn(onTap: _onSkip, compact: true),
+                      ],
                     ),
-                    const SizedBox(height: 10),
-                    _SkipBtn(onTap: _onSkip, compact: true),
-                  ],
+                  ),
                 ),
               ),
           ],
