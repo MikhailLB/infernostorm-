@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../env/app_config.dart';
 import '../net/blaze_storage.dart';
 import '../net/signal_service.dart';
@@ -34,6 +35,13 @@ class _AlertOptInState extends State<AlertOptIn>
   @override
   void initState() {
     super.initState();
+
+    // Allow free rotation so notification promo art switches between
+    // portrait/landscape. Re-applied post-frame to defeat any late
+    // setPreferredOrientations from a previous screen's dispose.
+    _unlockRotation();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _unlockRotation());
+
     _glowCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1100),
@@ -41,6 +49,15 @@ class _AlertOptInState extends State<AlertOptIn>
     _glowAnim = Tween<double>(begin: 0.3, end: 0.8).animate(
       CurvedAnimation(parent: _glowCtrl, curve: Curves.easeInOut),
     );
+  }
+
+  void _unlockRotation() {
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
   }
 
   @override
@@ -125,9 +142,7 @@ class _AlertOptInState extends State<AlertOptIn>
                     SizedBox(
                       width: size.width * 0.35,
                       child: _AcceptBtn(
-                          glowAnim: _glowAnim,
-                          onTap: _onAccept,
-                          compact: true),
+                          glowAnim: _glowAnim, onTap: _onAccept, compact: true),
                     ),
                     const SizedBox(height: 10),
                     _SkipBtn(onTap: _onSkip, compact: true),
@@ -264,7 +279,10 @@ class _SkipBtnState extends State<_SkipBtn> {
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.3,
                 shadows: const [
-                  Shadow(color: Colors.black54, blurRadius: 6, offset: Offset(0, 2)),
+                  Shadow(
+                      color: Colors.black54,
+                      blurRadius: 6,
+                      offset: Offset(0, 2)),
                 ],
               ),
             ),

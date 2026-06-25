@@ -34,8 +34,7 @@ class GateScreen extends StatefulWidget {
   State<GateScreen> createState() => _GateScreenState();
 }
 
-class _GateScreenState extends State<GateScreen>
-    with WidgetsBindingObserver {
+class _GateScreenState extends State<GateScreen> with WidgetsBindingObserver {
   late final WebViewController _ctrl;
   bool _loading = true;
   bool _goingOffline = false;
@@ -88,7 +87,8 @@ class _GateScreenState extends State<GateScreen>
 
           final desc = err.description.toLowerCase();
           final isTooMany = desc.contains('too_many_redirects') ||
-              err.errorCode == -1007 || err.errorCode == -9;
+              err.errorCode == -1007 ||
+              err.errorCode == -9;
 
           if (isTooMany && _lastMainUrl != null && _redirectRetries < 3) {
             _redirectRetries++;
@@ -114,8 +114,11 @@ class _GateScreenState extends State<GateScreen>
           final uri = Uri.tryParse(req.url);
           if (uri == null) return NavigationDecision.prevent;
           final s = uri.scheme;
-          if (s == 'http' || s == 'https' || s == 'about' ||
-              s == 'data' || s == 'blob') {
+          if (s == 'http' ||
+              s == 'https' ||
+              s == 'about' ||
+              s == 'data' ||
+              s == 'blob') {
             if (req.isMainFrame) _lastMainUrl = req.url;
             return NavigationDecision.navigate;
           }
@@ -299,17 +302,25 @@ class _GateScreenState extends State<GateScreen>
       },
       child: Scaffold(
         backgroundColor: Colors.black,
-        resizeToAvoidBottomInset: false, // critical — no double-resize with adjustResize
+        resizeToAvoidBottomInset:
+            false, // critical — no double-resize with adjustResize
         body: Stack(
           fit: StackFit.expand,
           children: [
             Padding(
-              // Portrait: apply status bar inset; landscape: none (immersive)
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).orientation == Orientation.landscape
-                    ? 0
-                    : MediaQuery.of(context).viewPadding.top,
-              ),
+              // Portrait: status bar inset on top.
+              // Landscape: notch can be on left OR right depending on rotation,
+              // so we apply left/right viewPadding to keep content clear of it.
+              padding: () {
+                final vp = MediaQuery.of(context).viewPadding;
+                final isLand =
+                    MediaQuery.of(context).orientation == Orientation.landscape;
+                return EdgeInsets.only(
+                  top: isLand ? 0 : vp.top,
+                  left: isLand ? vp.left : 0,
+                  right: isLand ? vp.right : 0,
+                );
+              }(),
               child: WebViewWidget(controller: _ctrl),
             ),
             if (_loading)
