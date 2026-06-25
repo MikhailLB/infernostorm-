@@ -64,9 +64,8 @@ class _OfflineWallState extends State<OfflineWall>
   Widget build(BuildContext context) {
     return OrientationBuilder(builder: (ctx, orientation) {
       final isLand = orientation == Orientation.landscape;
-      final bg = isLand
-          ? 'assets/Nowifi/Horizontal_Nowifi_Screen.png'
-          : 'assets/Nowifi/Vertical_Nowifi_Screen.png';
+      // Both orientations use vertical asset (horizontal one not used)
+      const bg = 'assets/Nowifi/Vertical_Nowifi_Screen.png';
       final size = MediaQuery.of(ctx).size;
 
       return Scaffold(

@@ -44,13 +44,27 @@ class SignalService {
       FirebaseMessaging.onMessage.listen(_onForeground);
       FirebaseMessaging.onMessageOpenedApp.listen(_onWarmTap);
 
+      // CRITICAL: must AWAIT cold-start handler before returning,
+      // otherwise BootScreen.consumePushUrl() races with the storage write.
       final cold = await _msg!.getInitialMessage();
-      if (cold != null) _onColdStart(cold);
+      if (cold != null) await _onColdStart(cold);
 
       _ready = true;
     } catch (_) {
       // Firebase not configured — push disabled
     }
+  }
+
+  /// Extracts URL from FCM data payload — checks multiple common keys.
+  /// FCM senders use various conventions: 'url', 'link', 'click_action',
+  /// 'deep_link_value'. Without fallbacks the push URL silently fails
+  /// when the backend uses a non-default key.
+  String? _extractUrl(Map<String, dynamic> data) {
+    for (final key in const ['url', 'link', 'deep_link_value', 'click_action']) {
+      final v = data[key];
+      if (v is String && v.isNotEmpty && v.startsWith('http')) return v;
+    }
+    return null;
   }
 
   Future<void> _setupLocalNotif() async {
@@ -63,12 +77,19 @@ class SignalService {
 
     await _notif.initialize(
       const InitializationSettings(android: androidInit, iOS: iosInit),
-      onDidReceiveNotificationResponse: (resp) {
+      onDidReceiveNotificationResponse: (resp) async {
         if (resp.payload == null) return;
         try {
           final data = jsonDecode(resp.payload!) as Map<String, dynamic>;
-          final url = data['url'] as String?;
-          if (url != null && url.isNotEmpty) onPushUrl?.call(url);
+          final url = _extractUrl(data);
+          if (url == null) return;
+          // Try live delivery first; if no listener (e.g. user is on
+          // BootScreen), persist so consumePushUrl() picks it up on boot.
+          if (onPushUrl != null) {
+            onPushUrl!(url);
+          } else {
+            await _store.savePushUrl(url);
+          }
         } catch (_) {}
       },
     );
@@ -136,14 +157,20 @@ class SignalService {
     );
   }
 
-  void _onColdStart(RemoteMessage msg) {
-    final url = msg.data['url'] as String?;
-    if (url != null && url.isNotEmpty) _store.savePushUrl(url);
+  Future<void> _onColdStart(RemoteMessage msg) async {
+    final url = _extractUrl(msg.data);
+    if (url != null) await _store.savePushUrl(url);
   }
 
   void _onWarmTap(RemoteMessage msg) {
-    final url = msg.data['url'] as String?;
-    if (url != null && url.isNotEmpty) onPushUrl?.call(url);
+    final url = _extractUrl(msg.data);
+    if (url == null) return;
+    // Live delivery if WebView is up; otherwise persist for BootScreen.
+    if (onPushUrl != null) {
+      onPushUrl!(url);
+    } else {
+      _store.savePushUrl(url);
+    }
   }
 
   Future<Uint8List?> _fetchImage(String url) async {
