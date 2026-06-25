@@ -42,7 +42,7 @@ void main() {
 
   // Firebase project number (env/ forge_keys.dart)
   // Get from: Firebase Console → Project Settings → General → Project number
-  const firebaseProjectNum = '255899845645';
+  const firebaseProjectNum = ''; // TODO: fill in
 
   // GCD base URL (env/ forge_keys.dart)
   const gcdBase = 'https://gcdsdk.appsflyer.com/install_data/v4.0/';

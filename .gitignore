@@ -44,12 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Signing
+# Signing — не коммитим в репо
 android/key.properties
 android/app/infernstorm.jks
-
-# Firebase — real config, do not commit to public repos
-android/app/google-services.json
-
-# Debug symbols from obfuscated builds
-build/debug_info/
