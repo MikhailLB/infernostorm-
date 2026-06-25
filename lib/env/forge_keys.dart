@@ -14,8 +14,9 @@ String resolveFlowKey() {
 // Firebase project number (sender ID).
 // TODO: Run tool/encode_keys.dart with your Firebase project number and replace _fbp.
 String resolveMessagingId() {
-  const fbp = <int>[]; // TODO: fill after running encode_keys.dart
-  if (fbp.isEmpty) return '';
+  const fbp = <int>[
+    0x6d, 0x99, 0x40, 0x32, 0x42, 0xa1, 0xc9, 0xe2, 0x62, 0x72, 0x19, 0x57,
+  ];
   return x(fbp);
 }
 
