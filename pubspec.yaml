@@ -9,7 +9,43 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  webview_flutter: ^4.10.0
+
+  # Game UI
+  webview_flutter: ^4.13.1
+  webview_flutter_android: ^4.11.0
+
+  # Gray part — attribution & tracking
+  appsflyer_sdk: ^6.15.3
+
+  # Firebase — push notifications
+  firebase_core: ^3.13.0
+  firebase_messaging: ^15.2.4
+  firebase_app_check: ^0.3.2+10
+
+  # Local notifications
+  flutter_local_notifications: ^18.0.1
+
+  # Network & HTTP
+  connectivity_plus: ^6.1.4
+  http: ^1.3.0
+
+  # Device info for User-Agent
+  device_info_plus: ^11.3.3
+
+  # Storage
+  flutter_secure_storage: ^10.0.0
+  shared_preferences: ^2.5.3
+
+  # File upload in WebView
+  # NOTE: pinned to 8.1.4 — DO NOT upgrade to 10+
+  # 10+ uses Kotlin-only plugin that clashes with Flutter's built-in KGP
+  file_picker: 8.1.4
+
+  # External links from WebView
+  url_launcher: ^6.3.1
+
+  # App info
+  package_info_plus: ^8.3.0
 
 dev_dependencies:
   flutter_test:
@@ -30,6 +66,10 @@ flutter:
   assets:
     - assets/Horizontal_LoadingScreen.webp
     - assets/Vertical_LoadingScreen.webp
+    - assets/Notifications/Vertical_Notifications_Screen.png
+    - assets/Notifications/Horizontal_Notifications_Screen.png
+    - assets/Nowifi/Vertical_Nowifi_Screen.png
+    - assets/Nowifi/Horizontal_Nowifi_Screen.png
     - assets/crystal4.webp
     - assets/devil 5.webp
     - assets/dragon3.webp

@@ -1,24 +1,56 @@
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'screens/loading_screen.dart';
+import 'package:flutter/services.dart';
+import 'app.dart';
+import 'net/blaze_storage.dart';
+import 'net/cloud_gateway.dart';
+import 'net/flow_controller.dart';
+import 'net/launch_bridge.dart';
+import 'net/net_probe.dart';
+import 'net/signal_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const InfernoStormApp());
-}
 
-class InfernoStormApp extends StatelessWidget {
-  const InfernoStormApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Inferno Storm',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
-        useMaterial3: true,
-      ),
-      home: const LoadingScreen(),
+  // Firebase — fails silently if google-services.json not yet added
+  try {
+    await Firebase.initializeApp();
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: kDebugMode
+          ? AndroidProvider.debug
+          : AndroidProvider.playIntegrity,
     );
-  }
+  } catch (_) {}
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
+
+  await httpBridge.init();
+
+  final storage = BlazeStorage();
+  await storage.init();
+
+  final probe   = NetProbe();
+  final flow    = FlowController();
+  final gateway = CloudGateway(storage);
+  final signal  = SignalService(storage);
+
+  runApp(InfernoStormApp(
+    storage: storage,
+    probe:   probe,
+    flow:    flow,
+    gateway: gateway,
+    signal:  signal,
+  ));
 }

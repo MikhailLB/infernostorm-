@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'game_screen.dart';
-import 'webview_screen.dart';
+import 'info_panel.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
@@ -53,7 +53,7 @@ class _MenuScreenState extends State<MenuScreen>
 
   void _openWebView(String title, String url) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => WebViewScreen(title: title, url: url)),
+      MaterialPageRoute(builder: (_) => InfoPanel(title: title, url: url)),
     );
   }
 
