@@ -22,13 +22,11 @@ class _OfflineWallState extends State<OfflineWall>
   void initState() {
     super.initState();
 
-    // Allow free rotation on this screen — switches between portrait/landscape art
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
+    // Allow free rotation on this screen — switches between portrait/landscape art.
+    // Re-applied post-frame in case the previous screen's dispose() runs late
+    // and tries to lock back to portrait.
+    _unlockRotation();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _unlockRotation());
 
     _btnPress = AnimationController(
       vsync: this,
@@ -37,6 +35,15 @@ class _OfflineWallState extends State<OfflineWall>
     _btnScale = Tween<double>(begin: 1.0, end: 0.93).animate(
       CurvedAnimation(parent: _btnPress, curve: Curves.easeOut),
     );
+  }
+
+  void _unlockRotation() {
+    SystemChrome.setPreferredOrientations(const [
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
   }
 
   @override

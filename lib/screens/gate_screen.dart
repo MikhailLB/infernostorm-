@@ -278,10 +278,8 @@ class _GateScreenState extends State<GateScreen>
     widget.signal.onPushUrl = null;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: SystemUiOverlay.values);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
+    // NOTE: do NOT lock orientation here — next screen's initState wins
+    // (e.g. OfflineWall needs all 4 orientations and would be overridden).
     super.dispose();
   }
 
