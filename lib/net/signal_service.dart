@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'blaze_storage.dart';
 import 'launch_bridge.dart';
@@ -17,6 +17,7 @@ class SignalService {
   FirebaseMessaging? _msg;
   String? _token;
   bool _ready = false;
+  bool _localReady = false;
 
   Function(String url)? onPushUrl;
   Function(String token)? onTokenRotated;
@@ -27,17 +28,26 @@ class SignalService {
 
   Future<void> init() async {
     if (_ready) return;
+
+    // Local notifications plugin works even without Firebase.
+    // Initialize it FIRST so requestPermission() can fire the system dialog
+    // even if Firebase is not yet configured.
+    await _setupLocalNotif();
+
     try {
       await Firebase.initializeApp();
       _msg = FirebaseMessaging.instance;
 
       FirebaseMessaging.onBackgroundMessage(_bgMessageHandler);
 
-      await _setupLocalNotif();
-
       _token = await _msg!.getToken();
+      if (kDebugMode) {
+        debugPrint('[SignalService] FCM token: ${_token ?? "(null)"}');
+      }
+
       _msg!.onTokenRefresh.listen((t) {
         _token = t;
+        if (kDebugMode) debugPrint('[SignalService] FCM token rotated');
         onTokenRotated?.call(t);
       });
 
@@ -50,8 +60,12 @@ class SignalService {
       if (cold != null) await _onColdStart(cold);
 
       _ready = true;
-    } catch (_) {
-      // Firebase not configured — push disabled
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[SignalService] Firebase init failed: $e');
+        debugPrint('[SignalService] -> Push notifications disabled. '
+            'Replace android/app/google-services.json with the real file.');
+      }
     }
   }
 
@@ -68,6 +82,8 @@ class SignalService {
   }
 
   Future<void> _setupLocalNotif() async {
+    if (_localReady) return;
+    _localReady = true;
     const androidInit = AndroidInitializationSettings('@drawable/ic_notification');
     const iosInit = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -107,21 +123,50 @@ class SignalService {
   }
 
   Future<bool> requestPermission() async {
-    if (_msg == null) return false;
-    final settings = await _msg!.requestPermission(
-      alert: true, badge: true, sound: true, provisional: false,
-    );
-    final granted = settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional;
+    // On Android 13+ the system POST_NOTIFICATIONS dialog can be triggered
+    // via the local_notifications plugin even if Firebase is not configured.
+    // We do BOTH paths so notifications work even before google-services.json
+    // is in place.
+    bool granted = false;
+
+    if (Platform.isAndroid) {
+      try {
+        final android = _notif.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+        final result = await android?.requestNotificationsPermission();
+        if (result == true) granted = true;
+      } catch (_) {}
+    }
+
+    // FCM path — only works when Firebase is configured
+    if (_msg != null) {
+      try {
+        final settings = await _msg!.requestPermission(
+          alert: true, badge: true, sound: true, provisional: false,
+        );
+        if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional) {
+          granted = true;
+        }
+        if (settings.authorizationStatus == AuthorizationStatus.denied) {
+          await _store.setNotifOsDenied();
+        }
+      } catch (_) {}
+    }
+
     await _store.setNotifGranted(granted);
-    // Mark OS-denied so we never loop-show the screen again
-    if (settings.authorizationStatus == AuthorizationStatus.denied) {
-      await _store.setNotifOsDenied();
+    if (kDebugMode) {
+      debugPrint('[SignalService] requestPermission granted=$granted '
+          'fcmReady=${_msg != null}');
     }
     return granted;
   }
 
   void _onForeground(RemoteMessage msg) async {
+    if (kDebugMode) {
+      debugPrint('[SignalService] foreground push: '
+          'title=${msg.notification?.title} data=${msg.data}');
+    }
     final notif = msg.notification;
     if (notif == null || !Platform.isAndroid) return;
 
@@ -159,11 +204,17 @@ class SignalService {
 
   Future<void> _onColdStart(RemoteMessage msg) async {
     final url = _extractUrl(msg.data);
+    if (kDebugMode) {
+      debugPrint('[SignalService] cold-start tap: url=$url data=${msg.data}');
+    }
     if (url != null) await _store.savePushUrl(url);
   }
 
   void _onWarmTap(RemoteMessage msg) {
     final url = _extractUrl(msg.data);
+    if (kDebugMode) {
+      debugPrint('[SignalService] warm tap: url=$url data=${msg.data}');
+    }
     if (url == null) return;
     // Live delivery if WebView is up; otherwise persist for BootScreen.
     if (onPushUrl != null) {
