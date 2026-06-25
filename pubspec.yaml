@@ -1,0 +1,42 @@
+name: inferno_storm1
+description: Inferno Storm - Card Matching Puzzle Game
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webview_flutter: ^4.10.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon2.png"
+  adaptive_icon_background: "#1a0800"
+  adaptive_icon_foreground: "assets/icon2.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/Horizontal_LoadingScreen.webp
+    - assets/Vertical_LoadingScreen.webp
+    - assets/crystal4.webp
+    - assets/devil 5.webp
+    - assets/dragon3.webp
+    - assets/fenix1.webp
+    - assets/giantfire8.webp
+    - assets/golem2.webp
+    - assets/hellgate9.webp
+    - assets/light6.webp
+    - assets/volcano1.webp
+    - assets/waterfall7.webp
