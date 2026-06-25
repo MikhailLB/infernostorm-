@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "infernstorm-placeholder",
-    "storage_bucket": "infernstorm-placeholder.appspot.com"
+    "project_number": "255899845645",
+    "project_id": "infernostorm-d83bb",
+    "storage_bucket": "infernostorm-d83bb.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:255899845645:android:0770940ea3bad224d38144",
         "android_client_info": {
           "package_name": "com.siegeburn.infernstorm"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "REPLACE_WITH_REAL_API_KEY"
+          "current_key": "AIzaSyARHP1jXYrkul0o68OFMS-l5GTIihFy8TA"
         }
       ],
       "services": {

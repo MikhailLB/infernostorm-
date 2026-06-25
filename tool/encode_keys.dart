@@ -37,12 +37,10 @@ void main() {
   const configUrl = 'https://infernostorm.com/config.php';
 
   // AppsFlyer Dev Key (env/ forge_keys.dart)
-  // Get from: AppsFlyer dashboard → App Settings → Dev Key
-  const afKey = '';          // TODO: fill in
+  const afKey = 'WT7fRwZva6hSx7DCnxEkKk';
 
   // Firebase project number (env/ forge_keys.dart)
-  // Get from: Firebase Console → Project Settings → General → Project number
-  const firebaseProjectNum = ''; // TODO: fill in
+  const firebaseProjectNum = '255899845645';
 
   // GCD base URL (env/ forge_keys.dart)
   const gcdBase = 'https://gcdsdk.appsflyer.com/install_data/v4.0/';

@@ -34,7 +34,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- AppsFlyer OneLink — update host after getting OneLink subdomain -->
+            <!-- AppsFlyer OneLink deep links -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -42,7 +42,7 @@
                 <data
                     android:scheme="https"
                     android:host="infernostorm.onelink.me"
-                    android:pathPrefix="/open"/>
+                    android:pathPrefix="/O95L"/>
             </intent-filter>
         </activity>
 
