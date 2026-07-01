@@ -308,17 +308,13 @@ class _GateScreenState extends State<GateScreen> with WidgetsBindingObserver {
           fit: StackFit.expand,
           children: [
             Padding(
-              // Edge-to-edge WebView: no top inset in either orientation
-              // (immersive mode hides the status bar). In landscape we still
-              // keep left/right notch padding so page content stays visible.
+              // Portrait: keep top safe zone (status bar / notch cutout).
+              // Landscape: edge-to-edge (no top, no side padding).
               padding: () {
                 final vp = MediaQuery.of(context).viewPadding;
                 final isLand =
                     MediaQuery.of(context).orientation == Orientation.landscape;
-                return EdgeInsets.only(
-                  left: isLand ? vp.left : 0,
-                  right: isLand ? vp.right : 0,
-                );
+                return EdgeInsets.only(top: isLand ? 0 : vp.top);
               }(),
               child: WebViewWidget(controller: _ctrl),
             ),
