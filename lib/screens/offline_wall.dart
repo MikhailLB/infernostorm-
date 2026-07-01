@@ -107,19 +107,19 @@ class _OfflineWallState extends State<OfflineWall>
                         gradient: _busy
                             ? null
                             : const LinearGradient(
-                                colors: [Color(0xFFE64500), Color(0xFFFF6B00)],
+                                colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
                         color: _busy
-                            ? Colors.deepOrange.withValues(alpha: 0.3)
+                            ? const Color(0xFFFFB300).withValues(alpha: 0.3)
                             : null,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: _busy
                             ? []
                             : [
                                 BoxShadow(
-                                  color: Colors.deepOrange
+                                  color: const Color(0xFFFFB300)
                                       .withValues(alpha: 0.55),
                                   blurRadius: 18,
                                   offset: const Offset(0, 6),
@@ -135,23 +135,23 @@ class _OfflineWallState extends State<OfflineWall>
                             child: _busy
                                 ? Row(
                                     mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const SizedBox(
+                                    children: const [
+                                      SizedBox(
                                         width: 18,
                                         height: 18,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2.5,
                                           valueColor: AlwaysStoppedAnimation(
-                                              Colors.white),
+                                              Color(0xFF3A2400)),
                                         ),
                                       ),
-                                      const SizedBox(width: 10),
-                                      const Text(
+                                      SizedBox(width: 10),
+                                      Text(
                                         'Connecting...',
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: Color(0xFF3A2400),
                                           fontSize: 15,
-                                          fontWeight: FontWeight.w600,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
                                     ],
@@ -159,7 +159,7 @@ class _OfflineWallState extends State<OfflineWall>
                                 : const Text(
                                     'Retry',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: Color(0xFF3A2400),
                                       fontSize: 18,
                                       fontWeight: FontWeight.w800,
                                       letterSpacing: 0.7,
