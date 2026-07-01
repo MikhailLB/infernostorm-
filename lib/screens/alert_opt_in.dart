@@ -132,30 +132,34 @@ class _AlertOptInState extends State<AlertOptIn>
                 ),
               )
             else
-              // Landscape: push buttons all the way to the bottom edge so they
-              // don't overlap the "Stay tuned for special offers..." slate plate
+              // Landscape: buttons anchored at bottom, symmetrically centered.
+              // SafeArea only respects bottom gesture-nav; left/right insets
+              // (notch/gesture bars) are ignored so buttons sit on true center.
               Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: size.width * 0.32,
-                          child: _AcceptBtn(
-                              glowAnim: _glowAnim,
-                              onTap: _onAccept,
-                              compact: true),
-                        ),
-                        const SizedBox(height: 4),
-                        _SkipBtn(onTap: _onSkip, compact: true),
-                      ],
-                    ),
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(ctx).viewPadding.bottom + 8,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: size.width * 0.32,
+                        child: _AcceptBtn(
+                            glowAnim: _glowAnim,
+                            onTap: _onAccept,
+                            compact: true),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: size.width * 0.32,
+                        child: _SkipBtn(onTap: _onSkip, compact: true),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -275,11 +279,29 @@ class _SkipBtnState extends State<_SkipBtn> {
         widget.onTap();
       },
       onTapCancel: () => setState(() => _down = false),
-      child: AnimatedOpacity(
-        opacity: _down ? 0.45 : 0.85,
+      child: AnimatedScale(
+        scale: _down ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 80),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: widget.compact ? 5 : 9),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: widget.compact ? 13 : 19),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: _down
+                  ? [const Color(0xFFCC3300), const Color(0xFFDD5500)]
+                  : [const Color(0xFFFF4500), const Color(0xFFFF7000)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.deepOrange.withValues(alpha: _down ? 0.2 : 0.35),
+                blurRadius: _down ? 6 : 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Center(
             child: Text(
               'Skip',
