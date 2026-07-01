@@ -141,22 +141,22 @@ class _AlertOptInState extends State<AlertOptIn>
                 bottom: 0,
                 child: Padding(
                   padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(ctx).viewPadding.bottom + 8,
+                    bottom: MediaQuery.of(ctx).viewPadding.bottom + 6,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(
-                        width: size.width * 0.32,
+                        width: size.width * 0.26,
                         child: _AcceptBtn(
                             glowAnim: _glowAnim,
                             onTap: _onAccept,
                             compact: true),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       SizedBox(
-                        width: size.width * 0.32,
+                        width: size.width * 0.26,
                         child: _SkipBtn(onTap: _onSkip, compact: true),
                       ),
                     ],
@@ -207,7 +207,7 @@ class _AcceptBtnState extends State<_AcceptBtn> {
           child: Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
-              vertical: widget.compact ? 13 : 19,
+              vertical: widget.compact ? 9 : 19,
             ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -234,14 +234,14 @@ class _AcceptBtnState extends State<_AcceptBtn> {
                 Icon(
                   Icons.local_fire_department,
                   color: Colors.white,
-                  size: widget.compact ? 18 : 22,
+                  size: widget.compact ? 15 : 22,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Text(
                   'Accept',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: widget.compact ? 15 : 19,
+                    fontSize: widget.compact ? 13 : 19,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
                   ),
@@ -284,7 +284,7 @@ class _SkipBtnState extends State<_SkipBtn> {
         duration: const Duration(milliseconds: 80),
         child: Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(vertical: widget.compact ? 13 : 19),
+          padding: EdgeInsets.symmetric(vertical: widget.compact ? 9 : 19),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: _down
@@ -307,7 +307,7 @@ class _SkipBtnState extends State<_SkipBtn> {
               'Skip',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: widget.compact ? 15 : 20,
+                fontSize: widget.compact ? 13 : 20,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.3,
                 shadows: const [
