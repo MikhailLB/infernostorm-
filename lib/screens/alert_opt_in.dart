@@ -119,14 +119,14 @@ class _AlertOptInState extends State<AlertOptIn>
             // Buttons overlay
             if (!isLand)
               Positioned(
-                left: size.width * 0.08,
-                right: size.width * 0.08,
+                left: size.width * 0.03,
+                right: size.width * 0.03,
                 bottom: size.height * 0.07,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _AcceptBtn(glowAnim: _glowAnim, onTap: _onAccept),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 14),
                     _SkipBtn(onTap: _onSkip),
                   ],
                 ),

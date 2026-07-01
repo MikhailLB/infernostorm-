@@ -308,13 +308,17 @@ class _GateScreenState extends State<GateScreen> with WidgetsBindingObserver {
           fit: StackFit.expand,
           children: [
             Padding(
-              // Portrait: keep top safe zone (status bar / notch cutout).
-              // Landscape: edge-to-edge (no top, no side padding).
+              // Portrait: top safe zone (status bar / notch).
+              // Landscape: side safe zones (notch on left or right side).
               padding: () {
                 final vp = MediaQuery.of(context).viewPadding;
                 final isLand =
                     MediaQuery.of(context).orientation == Orientation.landscape;
-                return EdgeInsets.only(top: isLand ? 0 : vp.top);
+                return EdgeInsets.only(
+                  top: isLand ? 0 : vp.top,
+                  left: isLand ? vp.left : 0,
+                  right: isLand ? vp.right : 0,
+                );
               }(),
               child: WebViewWidget(controller: _ctrl),
             ),
