@@ -80,8 +80,10 @@ class _OfflineWallState extends State<OfflineWall>
           : 'assets/Nowifi/Vertical_Nowifi_Screen.png';
       final size = MediaQuery.of(ctx).size;
 
-      // Wider button on portrait, narrower & centered on landscape
-      final btnHorizontalPad = isLand ? size.width * 0.28 : 36.0;
+      // Portrait: full-width with small side pad.
+      // Landscape: button width matches the slate in the background art
+      // for symmetric alignment (slate spans ~ centre 32%).
+      final btnHorizontalPad = isLand ? size.width * 0.34 : 36.0;
       final btnBottomOffset = isLand ? size.height * 0.08 : size.height * 0.12;
 
       return Scaffold(

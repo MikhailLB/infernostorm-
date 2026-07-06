@@ -25,14 +25,16 @@ class LaunchBridge extends http.BaseClient {
       final info = DeviceInfoPlugin();
       if (Platform.isAndroid) {
         final a = await info.androidInfo;
-        final sdk   = a.version.sdkInt;
+        // Use release version (e.g. "16") — NOT sdkInt (36)
+        final androidRelease =
+            a.version.release.isNotEmpty ? a.version.release : '15';
         final model = a.model;
         final brand = a.brand;
         final build = a.display.isNotEmpty ? a.display : a.id;
         final cv    = _chromeVer.isNotEmpty ? _chromeVer : '132.0.6834.163';
         final wk    = _webkitVer.isNotEmpty ? _webkitVer : '537.36';
         // Format per TZ: standard Chrome UA + appid + appname
-        _ua = 'Mozilla/5.0 (Linux; Android $sdk; $brand $model '
+        _ua = 'Mozilla/5.0 (Linux; Android $androidRelease; $brand $model '
             'Build/$build) AppleWebKit/$wk (KHTML, like Gecko) '
             'Chrome/$cv Mobile Safari/$wk '
             'appid/${AppConfig.bundleId} appname/${AppConfig.appName}';
