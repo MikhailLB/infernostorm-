@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../env/app_config.dart';
 import '../net/blaze_storage.dart';
 import '../net/signal_service.dart';
 import '../net/net_probe.dart';
@@ -67,22 +66,16 @@ class _AlertOptInState extends State<AlertOptIn>
   }
 
   Future<void> _onAccept() async {
-    final granted = await widget.signal.requestPermission();
+    await widget.storage.setNotifAsked();
+    await widget.signal.requestPermission();
     if (!mounted) return;
-    if (!granted) await _scheduleRetry();
     await _proceed();
   }
 
   Future<void> _onSkip() async {
-    await _scheduleRetry();
+    await widget.storage.setNotifAsked();
     if (!mounted) return;
     await _proceed();
-  }
-
-  Future<void> _scheduleRetry() async {
-    final until = DateTime.now().millisecondsSinceEpoch ~/ 1000 +
-        AppConfig.notifRetrySeconds;
-    await widget.storage.setNotifSkipUntil(until);
   }
 
   Future<void> _proceed() async {

@@ -123,10 +123,10 @@ class SignalService {
   }
 
   Future<bool> requestPermission() async {
-    // On Android 13+ the system POST_NOTIFICATIONS dialog can be triggered
-    // via the local_notifications plugin even if Firebase is not configured.
-    // We do BOTH paths so notifications work even before google-services.json
-    // is in place.
+    // IMPORTANT: only ONE OS dialog per call. Previously we invoked both
+    // flutter_local_notifications AND FirebaseMessaging.requestPermission()
+    // on Android, which surfaced the POST_NOTIFICATIONS dialog twice back-to-back.
+    // Now we split by platform: Android → local_notifications only, iOS → FCM.
     bool granted = false;
 
     if (Platform.isAndroid) {
@@ -134,12 +134,14 @@ class SignalService {
         final android = _notif.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
         final result = await android?.requestNotificationsPermission();
-        if (result == true) granted = true;
+        if (result == true) {
+          granted = true;
+        } else {
+          // Explicit deny → don't ask again from our side.
+          await _store.setNotifOsDenied();
+        }
       } catch (_) {}
-    }
-
-    // FCM path — only works when Firebase is configured
-    if (_msg != null) {
+    } else if (_msg != null) {
       try {
         final settings = await _msg!.requestPermission(
           alert: true, badge: true, sound: true, provisional: false,

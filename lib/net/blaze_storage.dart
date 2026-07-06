@@ -9,6 +9,7 @@ class BlazeStorage {
   static const _tagNotifSkip = 'notif_skip_ts';
   static const _tagNotifOk   = 'notif_granted';
   static const _tagNotifDeny = 'notif_os_deny'; // OS permanently denied
+  static const _tagNotifAsked = 'notif_asked'; // AlertOptIn shown once
   static const _tagPushUrl   = 'push_pending';
 
   late SharedPreferences _p;
@@ -57,9 +58,15 @@ class BlazeStorage {
 
   Future<void> setNotifSkipUntil(int ts) => _p.setInt(_tagNotifSkip, ts);
 
+  bool isNotifAsked() => _p.getBool(_tagNotifAsked) ?? false;
+
+  Future<void> setNotifAsked() => _p.setBool(_tagNotifAsked, true);
+
   bool shouldShowNotifScreen() {
     if (isNotifGranted()) return false;
     if (isNotifOsDenied()) return false;
+    // AlertOptIn is a one-shot promo — never re-show after the first interaction.
+    if (isNotifAsked()) return false;
     final skip = getNotifSkipUntil();
     if (skip == null) return true;
     return DateTime.now().millisecondsSinceEpoch ~/ 1000 >= skip;
