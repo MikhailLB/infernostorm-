@@ -81,9 +81,10 @@ class _OfflineWallState extends State<OfflineWall>
       final size = MediaQuery.of(ctx).size;
 
       // Portrait: full-width with small side pad.
-      // Landscape: button width matches the slate in the background art
-      // for symmetric alignment (slate spans ~ centre 32%).
-      final btnHorizontalPad = isLand ? size.width * 0.34 : 36.0;
+      // Landscape: left pad aligns with the slate; right pad is 15px shorter
+      // so the button extends 15px further to the right (asymmetric on purpose).
+      final btnLeftPad = isLand ? size.width * 0.34 : 36.0;
+      final btnRightPad = isLand ? size.width * 0.34 - 15 : 36.0;
       final btnBottomOffset = isLand ? size.height * 0.08 : size.height * 0.12;
 
       return Scaffold(
@@ -95,8 +96,8 @@ class _OfflineWallState extends State<OfflineWall>
 
             // Only the Retry button — title/subtitle are part of the art
             Positioned(
-              left: btnHorizontalPad,
-              right: btnHorizontalPad,
+              left: btnLeftPad,
+              right: btnRightPad,
               bottom: btnBottomOffset,
               child: SafeArea(
                 top: false,
