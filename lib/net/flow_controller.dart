@@ -15,7 +15,7 @@ class FlowController {
   Map<String, dynamic>? _appOpenData;
 
   final _attrDone = Completer<Map<String, dynamic>>();
-  final _dlDone   = Completer<void>();
+  final _dlDone = Completer<void>();
 
   bool _ready = false;
 
@@ -25,29 +25,37 @@ class FlowController {
 
     final opts = AppsFlyerOptions(
       afDevKey: AppConfig.flowKey,
-      appId:    AppConfig.analyticsAppId,
+      appId: AppConfig.analyticsAppId,
       showDebug: kDebugMode,
       timeToWaitForATTUserAuthorization: 10,
     );
     _sdk = AppsflyerSdk(opts);
 
     _sdk!.onInstallConversionData((data) async {
+      debugPrint('[AppsFlyer] conversion data: ${jsonEncode(data)}');
       final raw = data['payload'] as Map<String, dynamic>? ?? data;
       if (raw['af_status'] == 'Organic') {
+        debugPrint('[AppsFlyer] status=Organic → GCD retry in '
+            '${AppConfig.gcdRetrySeconds}s');
         await Future.delayed(Duration(seconds: AppConfig.gcdRetrySeconds));
         final retry = await _fetchGcdData();
+        debugPrint('[AppsFlyer] GCD retry result: ${jsonEncode(retry)}');
         _attribution = retry ?? raw;
       } else {
         _attribution = raw;
       }
+      debugPrint('[AppsFlyer] final attribution: ${jsonEncode(_attribution)}');
       if (!_attrDone.isCompleted) _attrDone.complete(_attribution!);
     });
 
     _sdk!.onAppOpenAttribution((data) {
+      debugPrint('[AppsFlyer] app-open attribution: ${jsonEncode(data)}');
       _appOpenData = data['payload'] as Map<String, dynamic>? ?? data;
     });
 
     _sdk!.onDeepLinking((result) {
+      debugPrint('[AppsFlyer] deep link status=${result.status} '
+          'clickEvent=${jsonEncode(result.deepLink?.clickEvent)}');
       if (result.deepLink != null) {
         _deepLink = result.deepLink!.clickEvent;
       }
@@ -65,12 +73,13 @@ class FlowController {
     try {
       final uid = await deviceId();
       if (uid == null) return null;
-      final bundle = Platform.isIOS ? AppConfig.analyticsAppId : AppConfig.bundleId;
+      final bundle =
+          Platform.isIOS ? AppConfig.analyticsAppId : AppConfig.bundleId;
       final url = resolveGcdBase(bundle, uid);
       if (url.isEmpty) return null;
-      final resp = await httpBridge
-          .get(Uri.parse(url), headers: {'authorization': 'Bearer ${AppConfig.flowKey}'})
-          .timeout(const Duration(seconds: 10));
+      final resp = await httpBridge.get(Uri.parse(url), headers: {
+        'authorization': 'Bearer ${AppConfig.flowKey}'
+      }).timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) {
         return jsonDecode(resp.body) as Map<String, dynamic>;
       }
@@ -78,8 +87,8 @@ class FlowController {
     return null;
   }
 
-  Future<Map<String, dynamic>> awaitAttribution() =>
-      _attrDone.future.timeout(const Duration(seconds: 30), onTimeout: () => {});
+  Future<Map<String, dynamic>> awaitAttribution() => _attrDone.future
+      .timeout(const Duration(seconds: 30), onTimeout: () => {});
 
   Future<void> awaitDeepLink() =>
       _dlDone.future.timeout(const Duration(seconds: 5), onTimeout: () {});
@@ -103,11 +112,11 @@ class FlowController {
     _deepLink?.forEach((k, v) => body.putIfAbsent(k, () => v));
     _appOpenData?.forEach((k, v) => body.putIfAbsent(k, () => v));
 
-    body['af_id']     = await deviceId() ?? '';
+    body['af_id'] = await deviceId() ?? '';
     body['bundle_id'] = AppConfig.bundleId;
-    body['os']        = Platform.isAndroid ? 'Android' : 'iOS';
-    body['store_id']  = AppConfig.storeId;
-    body['locale']    = locale;
+    body['os'] = Platform.isAndroid ? 'Android' : 'iOS';
+    body['store_id'] = AppConfig.storeId;
+    body['locale'] = locale;
 
     if (pushToken != null && pushToken.isNotEmpty) {
       body['push_token'] = pushToken;
@@ -116,7 +125,7 @@ class FlowController {
       body['firebase_project_id'] = AppConfig.messagingId;
     }
 
-    if (kDebugMode) debugPrint('[FlowController] payload: ${jsonEncode(body)}');
+    debugPrint('[FlowController] payload: ${jsonEncode(body)}');
     return body;
   }
 }
