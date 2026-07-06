@@ -203,7 +203,45 @@ class _BootScreenState extends State<BootScreen> {
 
   Future<void> _handleOfflineReturn() async {
     _setStage(_Stage.mid);
-    await Future.delayed(const Duration(milliseconds: 800));
+
+    // Attempt gateway recovery: on the first-run the network / attribution
+    // might have been unavailable, which pinned us into offline mode forever.
+    // If we now have connectivity, retry once — a successful reply upgrades
+    // us back to online (gray-part). Otherwise fall through to MenuScreen.
+    final online = await widget.probe.isOnline();
+    if (online) {
+      try {
+        await widget.flow.init();
+        await Future.wait([
+          widget.flow
+              .awaitAttribution()
+              .timeout(const Duration(seconds: 8), onTimeout: () => {}),
+          widget.flow
+              .awaitDeepLink()
+              .timeout(const Duration(seconds: 4), onTimeout: () => {}),
+        ]);
+
+        final locale = Platform.localeName.replaceAll('-', '_');
+        final body = await widget.flow.buildPayload(
+          locale: locale,
+          pushToken: widget.signal.token,
+        );
+        final reply = await widget.gateway.fetch(body);
+
+        if (reply.ok && reply.url != null) {
+          await widget.storage.setMode(RunMode.online);
+          _setStage(_Stage.done);
+          await Future.delayed(const Duration(milliseconds: 350));
+          if (!mounted) return;
+          _goContent(reply.url!);
+          return;
+        }
+      } catch (_) {
+        // Recovery failed — silently continue to MenuScreen.
+      }
+    }
+
+    await Future.delayed(const Duration(milliseconds: 300));
     _setStage(_Stage.done);
     await Future.delayed(const Duration(milliseconds: 400));
     if (!mounted) return;
