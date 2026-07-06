@@ -38,7 +38,7 @@ android {
         applicationId = "com.siegeburn.infernstorm"
         minSdk    = 30
         targetSdk = 35
-        versionCode = 14
+        versionCode = 15
         versionName = "1.0.1"
     }
 
