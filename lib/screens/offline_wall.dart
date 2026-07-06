@@ -84,7 +84,7 @@ class _OfflineWallState extends State<OfflineWall>
       // Landscape: left pad aligns with the slate; right pad is 15px shorter
       // so the button extends 15px further to the right (asymmetric on purpose).
       final btnLeftPad = isLand ? size.width * 0.34 : 36.0;
-      final btnRightPad = isLand ? size.width * 0.34 - 15 : 36.0;
+      final btnRightPad = isLand ? size.width * 0.34 - 22 : 36.0;
       final btnBottomOffset = isLand ? size.height * 0.08 : size.height * 0.12;
 
       return Scaffold(
