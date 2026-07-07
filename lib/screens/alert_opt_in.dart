@@ -107,15 +107,17 @@ class _AlertOptInState extends State<AlertOptIn>
   // Button placement in art-space fractions. Reproduces the same "cover"
   // math as OfflineWall so both notification and no-wifi screens stay
   // consistent across every device.
+  // Landscape: Accept + Skip on a single row, both anchored at the
+  // Skip line (by=0.96) and mirrored around the horizontal center.
   static const _NotifPlacement _landPlacement = _NotifPlacement(
-    acceptCx: 0.500,
-    acceptBy: 0.860,
-    skipCx: 0.500,
+    acceptCx: 0.395,
+    acceptBy: 0.960,
+    skipCx: 0.605,
     skipBy: 0.960,
-    widthFrac: 0.290,
+    widthFrac: 0.200,
     heightPx: 48,
-    minWidthPx: 200,
-    maxWidthPx: 520,
+    minWidthPx: 160,
+    maxWidthPx: 360,
   );
   static const _NotifPlacement _portPlacement = _NotifPlacement(
     acceptCx: 0.500,
