@@ -1,7 +1,7 @@
 name: inferno_storm1
 description: Inferno Storm - Card Matching Puzzle Game
 publish_to: 'none'
-version: 1.0.1+10
+version: 1.0.1+11
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
