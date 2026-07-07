@@ -1,8 +1,16 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// No-internet screen. Text "NO INTERNET CONNECTION / Check your connection
-/// and try again" is baked into the background art — we only draw Retry.
+/// No-internet screen. Title and subtitle are baked into the background
+/// art — we overlay only the Retry pill.
+///
+/// The button is positioned in art-pixel coordinates (relative to the
+/// source PNG's 2400×1080 / 1080×2400 canvas). We reproduce Flutter's
+/// BoxFit.cover math to find where the art is actually rendered inside
+/// the viewport and then place the button in that image-local frame.
+/// This keeps the button sitting on the same spot of the art on every
+/// device — phones, foldables, tablets — regardless of aspect ratio.
 class OfflineWall extends StatefulWidget {
   final WidgetBuilder onRetry;
 
@@ -18,13 +26,35 @@ class _OfflineWallState extends State<OfflineWall>
   late AnimationController _btnPress;
   late Animation<double> _btnScale;
 
+  // Source PNG size (identical for the notification art too).
+  static const Size _landArt = Size(2400, 1080);
+  static const Size _portArt = Size(1080, 2400);
+
+  // Retry pill in art-space, measured from the source PNG:
+  //   cx / by   — center-x / bottom-y as fractions of the art.
+  //   widthFrac — pill width as a fraction of the art width.
+  //   heightPx  — visual height in logical pixels (constant across devices).
+  static const _RetryPlacement _landPlacement = _RetryPlacement(
+    cx: 0.503,
+    by: 0.920,
+    widthFrac: 0.290,
+    heightPx: 54,
+    minWidthPx: 200,
+    maxWidthPx: 520,
+  );
+  static const _RetryPlacement _portPlacement = _RetryPlacement(
+    cx: 0.500,
+    by: 0.870,
+    widthFrac: 0.820,
+    heightPx: 54,
+    minWidthPx: 240,
+    maxWidthPx: 640,
+  );
+
   @override
   void initState() {
     super.initState();
 
-    // Allow free rotation on this screen — switches between portrait/landscape art.
-    // Re-applied post-frame in case the previous screen's dispose() runs late
-    // and tries to lock back to portrait.
     _unlockRotation();
     WidgetsBinding.instance.addPostFrameCallback((_) => _unlockRotation());
 
@@ -59,7 +89,6 @@ class _OfflineWallState extends State<OfflineWall>
     setState(() => _busy = true);
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
-    // Restore portrait lock — next screen (BootScreen) re-allows rotation if needed
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -78,129 +107,150 @@ class _OfflineWallState extends State<OfflineWall>
       final bg = isLand
           ? 'assets/Nowifi/Horizontal_Nowifi_Screen.png'
           : 'assets/Nowifi/Vertical_Nowifi_Screen.png';
-      final size = MediaQuery.of(ctx).size;
-
-      // Adaptive symmetric button.
-      // Portrait: nearly full-width pill with a small side pad.
-      // Landscape: centered pill whose width is a fraction of the screen —
-      // matches the "slate" plate in the background art across phones,
-      // foldables and tablets without any hard-coded pixel offsets.
-      final double btnWidthFactor = isLand ? 0.30 : 0.82;
-      final double btnBottomOffset =
-          isLand ? size.height * 0.08 : size.height * 0.12;
+      final artSize = isLand ? _landArt : _portArt;
+      final placement = isLand ? _landPlacement : _portPlacement;
 
       return Scaffold(
         backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(bg, fit: BoxFit.cover),
+        body: LayoutBuilder(builder: (_, cons) {
+          final rect = placement.resolve(
+            viewport: Size(cons.maxWidth, cons.maxHeight),
+            artSize: artSize,
+          );
 
-            // Only the Retry button — title/subtitle are part of the art.
-            // Positioned across the full width and centered via Align, so the
-            // button is always symmetric relative to its own placement.
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: btnBottomOffset,
-              child: SafeArea(
-                top: false,
-                // Landscape: nudge the pill 7px to the right so it sits
-                // slightly right of the geometric center to align with
-                // the slate art. Portrait: no offset (centered).
-                child: Transform.translate(
-                  offset: Offset(isLand ? 7 : 0, 0),
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: FractionallySizedBox(
-                      widthFactor: btnWidthFactor,
-                      child: ScaleTransition(
-                      scale: _btnScale,
-                      child: SizedBox(
-                        height: 54,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: _busy
-                                ? null
-                                : const LinearGradient(
-                                    colors: [
-                                      Color(0xFFFFD54F),
-                                      Color(0xFFFFB300)
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                            color: _busy
-                                ? const Color(0xFFFFB300)
-                                    .withValues(alpha: 0.3)
-                                : null,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: _busy
-                                ? []
-                                : [
-                                    BoxShadow(
-                                      color: const Color(0xFFFFB300)
-                                          .withValues(alpha: 0.55),
-                                      blurRadius: 18,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(16),
-                              onTap: _busy ? null : _retry,
-                              child: Center(
-                                child: _busy
-                                    ? Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          SizedBox(
-                                            width: 18,
-                                            height: 18,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2.5,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation(
-                                                Color(0xFF3A2400),
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(width: 10),
-                                          Text(
-                                            'Connecting...',
-                                            style: TextStyle(
-                                              color: Color(0xFF3A2400),
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : const Text(
-                                        'Retry',
-                                        style: TextStyle(
-                                          color: Color(0xFF3A2400),
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.7,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(bg, fit: BoxFit.cover),
+              Positioned(
+                left: rect.left,
+                top: rect.top,
+                width: rect.width,
+                height: rect.height,
+                child: ScaleTransition(
+                  scale: _btnScale,
+                  child: _RetryPill(busy: _busy, onTap: _busy ? null : _retry),
                 ),
               ),
-            ),
-          ),
-          ],
-        ),
+            ],
+          );
+        }),
       );
     });
+  }
+}
+
+/// Immutable placement spec resolved against the viewport at build-time.
+class _RetryPlacement {
+  final double cx;
+  final double by;
+  final double widthFrac;
+  final double heightPx;
+  final double minWidthPx;
+  final double maxWidthPx;
+
+  const _RetryPlacement({
+    required this.cx,
+    required this.by,
+    required this.widthFrac,
+    required this.heightPx,
+    required this.minWidthPx,
+    required this.maxWidthPx,
+  });
+
+  /// Computes the pill's screen-space Rect given the current viewport size.
+  /// Mirrors BoxFit.cover:  scale = max(W/artW, H/artH).
+  Rect resolve({required Size viewport, required Size artSize}) {
+    final coverScale = math.max(
+      viewport.width / artSize.width,
+      viewport.height / artSize.height,
+    );
+    final renderedW = artSize.width * coverScale;
+    final renderedH = artSize.height * coverScale;
+    final imgLeft = (viewport.width - renderedW) / 2;
+    final imgTop = (viewport.height - renderedH) / 2;
+
+    final btnCx = imgLeft + renderedW * cx;
+    final btnBy = imgTop + renderedH * by;
+    final btnW =
+        (renderedW * widthFrac).clamp(minWidthPx, maxWidthPx).toDouble();
+    final btnH = heightPx;
+
+    return Rect.fromLTWH(btnCx - btnW / 2, btnBy - btnH, btnW, btnH);
+  }
+}
+
+class _RetryPill extends StatelessWidget {
+  final bool busy;
+  final VoidCallback? onTap;
+
+  const _RetryPill({required this.busy, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: busy
+            ? null
+            : const LinearGradient(
+                colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        color: busy ? const Color(0xFFFFB300).withValues(alpha: 0.3) : null,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: busy
+            ? []
+            : [
+                BoxShadow(
+                  color: const Color(0xFFFFB300).withValues(alpha: 0.55),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Center(
+            child: busy
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor:
+                              AlwaysStoppedAnimation(Color(0xFF3A2400)),
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'Connecting...',
+                        style: TextStyle(
+                          color: Color(0xFF3A2400),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  )
+                : const Text(
+                    'Retry',
+                    style: TextStyle(
+                      color: Color(0xFF3A2400),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.7,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../env/app_config.dart';
@@ -99,73 +100,124 @@ class _AlertOptInState extends State<AlertOptIn>
     );
   }
 
+  // Source PNG size — Vertical_/Horizontal_Notifications_Screen.png.
+  static const Size _landArt = Size(2400, 1080);
+  static const Size _portArt = Size(1080, 2400);
+
+  // Button placement in art-space fractions. Reproduces the same "cover"
+  // math as OfflineWall so both notification and no-wifi screens stay
+  // consistent across every device.
+  static const _NotifPlacement _landPlacement = _NotifPlacement(
+    acceptCx: 0.500,
+    acceptBy: 0.860,
+    skipCx: 0.500,
+    skipBy: 0.960,
+    widthFrac: 0.290,
+    heightPx: 48,
+    minWidthPx: 200,
+    maxWidthPx: 520,
+  );
+  static const _NotifPlacement _portPlacement = _NotifPlacement(
+    acceptCx: 0.500,
+    acceptBy: 0.870,
+    skipCx: 0.500,
+    skipBy: 0.955,
+    widthFrac: 0.860,
+    heightPx: 60,
+    minWidthPx: 240,
+    maxWidthPx: 640,
+  );
+
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     return OrientationBuilder(builder: (ctx, orientation) {
       final isLand = orientation == Orientation.landscape;
       final bg = isLand
           ? 'assets/Notifications/Horizontal_Notifications_Screen.png'
           : 'assets/Notifications/Vertical_Notifications_Screen.png';
+      final artSize = isLand ? _landArt : _portArt;
+      final placement = isLand ? _landPlacement : _portPlacement;
 
       return Scaffold(
         backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(bg, fit: BoxFit.cover),
+        body: LayoutBuilder(builder: (_, cons) {
+          final viewport = Size(cons.maxWidth, cons.maxHeight);
+          final accept = placement.resolveAccept(
+              viewport: viewport, artSize: artSize);
+          final skip = placement.resolveSkip(
+              viewport: viewport, artSize: artSize);
 
-            // Buttons overlay
-            if (!isLand)
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(bg, fit: BoxFit.cover),
               Positioned(
-                left: size.width * 0.03,
-                right: size.width * 0.03,
-                bottom: size.height * 0.07,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _AcceptBtn(glowAnim: _glowAnim, onTap: _onAccept),
-                    const SizedBox(height: 14),
-                    _SkipBtn(onTap: _onSkip),
-                  ],
-                ),
-              )
-            else
-              // Landscape: buttons anchored at bottom, symmetrically centered.
-              // SafeArea only respects bottom gesture-nav; left/right insets
-              // (notch/gesture bars) are ignored so buttons sit on true center.
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(ctx).viewPadding.bottom + 6,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: size.width * 0.26,
-                        child: _AcceptBtn(
-                            glowAnim: _glowAnim,
-                            onTap: _onAccept,
-                            compact: true),
-                      ),
-                      const SizedBox(height: 6),
-                      SizedBox(
-                        width: size.width * 0.26,
-                        child: _SkipBtn(onTap: _onSkip, compact: true),
-                      ),
-                    ],
-                  ),
-                ),
+                left: accept.left,
+                top: accept.top,
+                width: accept.width,
+                height: accept.height,
+                child: _AcceptBtn(glowAnim: _glowAnim, onTap: _onAccept),
               ),
-          ],
-        ),
+              Positioned(
+                left: skip.left,
+                top: skip.top,
+                width: skip.width,
+                height: skip.height,
+                child: _SkipBtn(onTap: _onSkip),
+              ),
+            ],
+          );
+        }),
       );
     });
+  }
+}
+
+/// Placement spec for both notification buttons, resolved against the
+/// current viewport with BoxFit.cover math (see OfflineWall for details).
+class _NotifPlacement {
+  final double acceptCx;
+  final double acceptBy;
+  final double skipCx;
+  final double skipBy;
+  final double widthFrac;
+  final double heightPx;
+  final double minWidthPx;
+  final double maxWidthPx;
+
+  const _NotifPlacement({
+    required this.acceptCx,
+    required this.acceptBy,
+    required this.skipCx,
+    required this.skipBy,
+    required this.widthFrac,
+    required this.heightPx,
+    required this.minWidthPx,
+    required this.maxWidthPx,
+  });
+
+  Rect resolveAccept({required Size viewport, required Size artSize}) =>
+      _resolve(acceptCx, acceptBy, viewport, artSize);
+
+  Rect resolveSkip({required Size viewport, required Size artSize}) =>
+      _resolve(skipCx, skipBy, viewport, artSize);
+
+  Rect _resolve(double cx, double by, Size viewport, Size artSize) {
+    final coverScale = math.max(
+      viewport.width / artSize.width,
+      viewport.height / artSize.height,
+    );
+    final renderedW = artSize.width * coverScale;
+    final renderedH = artSize.height * coverScale;
+    final imgLeft = (viewport.width - renderedW) / 2;
+    final imgTop = (viewport.height - renderedH) / 2;
+
+    final btnCx = imgLeft + renderedW * cx;
+    final btnBy = imgTop + renderedH * by;
+    final btnW =
+        (renderedW * widthFrac).clamp(minWidthPx, maxWidthPx).toDouble();
+
+    return Rect.fromLTWH(btnCx - btnW / 2, btnBy - heightPx, btnW, heightPx);
   }
 }
 
@@ -174,13 +226,8 @@ class _AlertOptInState extends State<AlertOptIn>
 class _AcceptBtn extends StatefulWidget {
   final Animation<double> glowAnim;
   final VoidCallback onTap;
-  final bool compact;
 
-  const _AcceptBtn({
-    required this.glowAnim,
-    required this.onTap,
-    this.compact = false,
-  });
+  const _AcceptBtn({required this.glowAnim, required this.onTap});
 
   @override
   State<_AcceptBtn> createState() => _AcceptBtnState();
@@ -203,14 +250,8 @@ class _AcceptBtnState extends State<_AcceptBtn> {
         builder: (_, __) => AnimatedScale(
           scale: _down ? 0.95 : 1.0,
           duration: const Duration(milliseconds: 80),
-          child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(
-              vertical: widget.compact ? 9 : 19,
-            ),
+          child: DecoratedBox(
             decoration: BoxDecoration(
-              // Bright yellow / gold gradient — matches the Retry pill on
-              // the Nowifi art. Same colors used for both Accept and Skip.
               gradient: LinearGradient(
                 colors: _down
                     ? [const Color(0xFFE0A800), const Color(0xFFCC8A00)]
@@ -229,25 +270,34 @@ class _AcceptBtnState extends State<_AcceptBtn> {
                 ),
               ],
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.local_fire_department,
-                  color: const Color(0xFF3A2400),
-                  size: widget.compact ? 15 : 22,
+            // FittedBox lets the icon+text pair auto-shrink to fit the
+            // parent Positioned box; keeps the visual balance identical
+            // across small phones and tablets.
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.local_fire_department,
+                      color: Color(0xFF3A2400),
+                      size: 22,
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      'Accept',
+                      style: TextStyle(
+                        color: Color(0xFF3A2400),
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Accept',
-                  style: TextStyle(
-                    color: const Color(0xFF3A2400),
-                    fontSize: widget.compact ? 13 : 19,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -260,9 +310,8 @@ class _AcceptBtnState extends State<_AcceptBtn> {
 
 class _SkipBtn extends StatefulWidget {
   final VoidCallback onTap;
-  final bool compact;
 
-  const _SkipBtn({required this.onTap, this.compact = false});
+  const _SkipBtn({required this.onTap});
 
   @override
   State<_SkipBtn> createState() => _SkipBtnState();
@@ -283,12 +332,8 @@ class _SkipBtnState extends State<_SkipBtn> {
       child: AnimatedScale(
         scale: _down ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 80),
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(vertical: widget.compact ? 9 : 19),
+        child: DecoratedBox(
           decoration: BoxDecoration(
-            // Bright yellow / gold gradient — matches the Retry pill on
-            // the Nowifi art. Same colors used for both Accept and Skip.
             gradient: LinearGradient(
               colors: _down
                   ? [const Color(0xFFE0A800), const Color(0xFFCC8A00)]
@@ -306,14 +351,18 @@ class _SkipBtnState extends State<_SkipBtn> {
               ),
             ],
           ),
-          child: Center(
-            child: Text(
-              'Skip',
-              style: TextStyle(
-                color: const Color(0xFF3A2400),
-                fontSize: widget.compact ? 13 : 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Skip',
+                style: TextStyle(
+                  color: Color(0xFF3A2400),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
               ),
             ),
           ),
