@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../env/app_config.dart';
 import '../net/blaze_storage.dart';
 import '../net/signal_service.dart';
 import '../net/net_probe.dart';
@@ -66,14 +67,19 @@ class _AlertOptInState extends State<AlertOptIn>
   }
 
   Future<void> _onAccept() async {
-    await widget.storage.setNotifAsked();
+    // requestPermission handles all outcomes:
+    //   granted → setNotifGranted(true) so shouldShowNotifScreen stays false
+    //   OS-deny → setNotifOsDenied so we never re-prompt from our side
     await widget.signal.requestPermission();
     if (!mounted) return;
     await _proceed();
   }
 
   Future<void> _onSkip() async {
-    await widget.storage.setNotifAsked();
+    // Skip re-arms the promo for AppConfig.notifRetrySeconds (3 days by default).
+    final until = DateTime.now().millisecondsSinceEpoch ~/ 1000 +
+        AppConfig.notifRetrySeconds;
+    await widget.storage.setNotifSkipUntil(until);
     if (!mounted) return;
     await _proceed();
   }
@@ -203,18 +209,20 @@ class _AcceptBtnState extends State<_AcceptBtn> {
               vertical: widget.compact ? 9 : 19,
             ),
             decoration: BoxDecoration(
+              // Bright yellow / gold gradient — matches the Retry pill on
+              // the Nowifi art. Same colors used for both Accept and Skip.
               gradient: LinearGradient(
                 colors: _down
-                    ? [const Color(0xFFCC3300), const Color(0xFFDD5500)]
-                    : [const Color(0xFFFF4500), const Color(0xFFFF7000)],
+                    ? [const Color(0xFFE0A800), const Color(0xFFCC8A00)]
+                    : [const Color(0xFFFFD54F), const Color(0xFFFFB300)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.deepOrange
-                      .withValues(alpha: _down ? 0.2 : widget.glowAnim.value),
+                  color: const Color(0xFFFFB300)
+                      .withValues(alpha: _down ? 0.25 : widget.glowAnim.value),
                   blurRadius: _down ? 6 : 16 + widget.glowAnim.value * 14,
                   spreadRadius: _down ? 0 : widget.glowAnim.value * 3,
                   offset: const Offset(0, 4),
@@ -226,14 +234,14 @@ class _AcceptBtnState extends State<_AcceptBtn> {
               children: [
                 Icon(
                   Icons.local_fire_department,
-                  color: Colors.white,
+                  color: const Color(0xFF3A2400),
                   size: widget.compact ? 15 : 22,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   'Accept',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF3A2400),
                     fontSize: widget.compact ? 13 : 19,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
@@ -279,17 +287,20 @@ class _SkipBtnState extends State<_SkipBtn> {
           width: double.infinity,
           padding: EdgeInsets.symmetric(vertical: widget.compact ? 9 : 19),
           decoration: BoxDecoration(
+            // Bright yellow / gold gradient — matches the Retry pill on
+            // the Nowifi art. Same colors used for both Accept and Skip.
             gradient: LinearGradient(
               colors: _down
-                  ? [const Color(0xFFCC3300), const Color(0xFFDD5500)]
-                  : [const Color(0xFFFF4500), const Color(0xFFFF7000)],
+                  ? [const Color(0xFFE0A800), const Color(0xFFCC8A00)]
+                  : [const Color(0xFFFFD54F), const Color(0xFFFFB300)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.deepOrange.withValues(alpha: _down ? 0.2 : 0.35),
+                color: const Color(0xFFFFB300)
+                    .withValues(alpha: _down ? 0.2 : 0.4),
                 blurRadius: _down ? 6 : 12,
                 offset: const Offset(0, 4),
               ),
@@ -299,16 +310,10 @@ class _SkipBtnState extends State<_SkipBtn> {
             child: Text(
               'Skip',
               style: TextStyle(
-                color: Colors.white,
+                color: const Color(0xFF3A2400),
                 fontSize: widget.compact ? 13 : 20,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0.3,
-                shadows: const [
-                  Shadow(
-                      color: Colors.black54,
-                      blurRadius: 6,
-                      offset: Offset(0, 2)),
-                ],
               ),
             ),
           ),

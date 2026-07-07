@@ -80,12 +80,14 @@ class _OfflineWallState extends State<OfflineWall>
           : 'assets/Nowifi/Vertical_Nowifi_Screen.png';
       final size = MediaQuery.of(ctx).size;
 
-      // Portrait: full-width with small side pad.
-      // Landscape: left pad aligns with the slate; right pad is 15px shorter
-      // so the button extends 15px further to the right (asymmetric on purpose).
-      final btnLeftPad = isLand ? size.width * 0.34 - 35 : 36.0;
-      final btnRightPad = isLand ? size.width * 0.34 - 52 : 36.0;
-      final btnBottomOffset = isLand ? size.height * 0.08 : size.height * 0.12;
+      // Adaptive symmetric button.
+      // Portrait: nearly full-width pill with a small side pad.
+      // Landscape: centered pill whose width is a fraction of the screen —
+      // matches the "slate" plate in the background art across phones,
+      // foldables and tablets without any hard-coded pixel offsets.
+      final double btnWidthFactor = isLand ? 0.30 : 0.82;
+      final double btnBottomOffset =
+          isLand ? size.height * 0.08 : size.height * 0.12;
 
       return Scaffold(
         backgroundColor: Colors.black,
@@ -94,80 +96,94 @@ class _OfflineWallState extends State<OfflineWall>
           children: [
             Image.asset(bg, fit: BoxFit.cover),
 
-            // Only the Retry button — title/subtitle are part of the art
+            // Only the Retry button — title/subtitle are part of the art.
+            // Positioned across the full width and centered via Align, so the
+            // button is always symmetric relative to its own placement.
             Positioned(
-              left: btnLeftPad,
-              right: btnRightPad,
+              left: 0,
+              right: 0,
               bottom: btnBottomOffset,
               child: SafeArea(
                 top: false,
-                child: ScaleTransition(
-                  scale: _btnScale,
-                  child: SizedBox(
-                    height: 54,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: _busy
-                            ? null
-                            : const LinearGradient(
-                                colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                        color: _busy
-                            ? const Color(0xFFFFB300).withValues(alpha: 0.3)
-                            : null,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: _busy
-                            ? []
-                            : [
-                                BoxShadow(
-                                  color: const Color(0xFFFFB300)
-                                      .withValues(alpha: 0.55),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: _busy ? null : _retry,
-                          child: Center(
-                            child: _busy
-                                ? Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: const [
-                                      SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          valueColor: AlwaysStoppedAnimation(
-                                              Color(0xFF3A2400)),
-                                        ),
-                                      ),
-                                      SizedBox(width: 10),
-                                      Text(
-                                        'Connecting...',
+                child: Align(
+                  alignment: Alignment.center,
+                  child: FractionallySizedBox(
+                    widthFactor: btnWidthFactor,
+                    child: ScaleTransition(
+                      scale: _btnScale,
+                      child: SizedBox(
+                        height: 54,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: _busy
+                                ? null
+                                : const LinearGradient(
+                                    colors: [
+                                      Color(0xFFFFD54F),
+                                      Color(0xFFFFB300)
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                            color: _busy
+                                ? const Color(0xFFFFB300)
+                                    .withValues(alpha: 0.3)
+                                : null,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: _busy
+                                ? []
+                                : [
+                                    BoxShadow(
+                                      color: const Color(0xFFFFB300)
+                                          .withValues(alpha: 0.55),
+                                      blurRadius: 18,
+                                      offset: const Offset(0, 6),
+                                    ),
+                                  ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(16),
+                              onTap: _busy ? null : _retry,
+                              child: Center(
+                                child: _busy
+                                    ? Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation(
+                                                Color(0xFF3A2400),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            'Connecting...',
+                                            style: TextStyle(
+                                              color: Color(0xFF3A2400),
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : const Text(
+                                        'Retry',
                                         style: TextStyle(
                                           color: Color(0xFF3A2400),
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.7,
                                         ),
                                       ),
-                                    ],
-                                  )
-                                : const Text(
-                                    'Retry',
-                                    style: TextStyle(
-                                      color: Color(0xFF3A2400),
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.7,
-                                    ),
-                                  ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
