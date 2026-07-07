@@ -5,7 +5,7 @@ import 'api_routes.dart';
 class AppConfig {
   static const String bundleId = 'com.siegeburn.infernstorm';
   static const String storeId  = 'com.siegeburn.infernstorm';
-  static const String appName  = 'Inferno Storm';
+  static const String appName  = 'InfernoStorm';
 
   // iOS App Store numeric ID — not used on Android
   static const String analyticsAppId = '';
