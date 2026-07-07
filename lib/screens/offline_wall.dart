@@ -105,11 +105,16 @@ class _OfflineWallState extends State<OfflineWall>
               bottom: btnBottomOffset,
               child: SafeArea(
                 top: false,
-                child: Align(
-                  alignment: Alignment.center,
-                  child: FractionallySizedBox(
-                    widthFactor: btnWidthFactor,
-                    child: ScaleTransition(
+                // Landscape: nudge the pill 7px to the right so it sits
+                // slightly right of the geometric center to align with
+                // the slate art. Portrait: no offset (centered).
+                child: Transform.translate(
+                  offset: Offset(isLand ? 7 : 0, 0),
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: FractionallySizedBox(
+                      widthFactor: btnWidthFactor,
+                      child: ScaleTransition(
                       scale: _btnScale,
                       child: SizedBox(
                         height: 54,
@@ -192,6 +197,7 @@ class _OfflineWallState extends State<OfflineWall>
                 ),
               ),
             ),
+          ),
           ],
         ),
       );
