@@ -35,7 +35,7 @@ class _OfflineWallState extends State<OfflineWall>
   //   widthFrac — pill width as a fraction of the art width.
   //   heightPx  — visual height in logical pixels (constant across devices).
   static const _RetryPlacement _landPlacement = _RetryPlacement(
-    cx: 0.503,
+    cx: 0.500,
     by: 0.920,
     widthFrac: 0.290,
     heightPx: 54,
@@ -56,7 +56,11 @@ class _OfflineWallState extends State<OfflineWall>
     super.initState();
 
     _unlockRotation();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _unlockRotation());
+    _applyEdgeToEdge();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _unlockRotation();
+      _applyEdgeToEdge();
+    });
 
     _btnPress = AnimationController(
       vsync: this,
@@ -76,9 +80,21 @@ class _OfflineWallState extends State<OfflineWall>
     ]);
   }
 
+  /// Full-bleed background: hide status/navigation bars so the art
+  /// (and the Retry pill placed relative to it) is not offset by any
+  /// system safe-zone insets.
+  void _applyEdgeToEdge() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
   @override
   void dispose() {
     _btnPress.dispose();
+    // Restore normal system UI for the next screen.
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
     super.dispose();
   }
 
