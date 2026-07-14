@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../bridge/insight.dart';
 
 /// No-internet screen. Title and subtitle are baked into the background
 /// art — we overlay only the Retry pill.
@@ -54,6 +55,7 @@ class _OfflineWallState extends State<OfflineWall>
   @override
   void initState() {
     super.initState();
+    Insight.screen('offline');
 
     _unlockRotation();
     _applyEdgeToEdge();
@@ -100,6 +102,7 @@ class _OfflineWallState extends State<OfflineWall>
 
   Future<void> _retry() async {
     if (_busy) return;
+    Insight.event('offline_retry');
     await _btnPress.forward();
     await _btnPress.reverse();
     setState(() => _busy = true);

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../bridge/insight.dart';
 import '../data/run_mode.dart';
 import '../net/blaze_storage.dart';
 import '../net/cloud_gateway.dart';
@@ -47,6 +48,7 @@ class _BootScreenState extends State<BootScreen> {
   @override
   void initState() {
     super.initState();
+    Insight.screen('loading');
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -119,6 +121,7 @@ class _BootScreenState extends State<BootScreen> {
   Future<void> _handleFirstRun() async {
     final online = await widget.probe.isOnline();
     if (!online) {
+      Insight.event('route_offline');
       if (!mounted) return;
       _route(() => OfflineWall(onRetry: (_) => _rebuildBoot()));
       return;
@@ -136,6 +139,7 @@ class _BootScreenState extends State<BootScreen> {
       locale: locale,
       pushToken: widget.signal.token,
     );
+    _identifyFromPayload(body);
     final reply = await widget.gateway.fetch(body);
 
     _setStage(_Stage.done);
@@ -144,9 +148,13 @@ class _BootScreenState extends State<BootScreen> {
 
     if (reply.ok && reply.url != null) {
       await widget.storage.setMode(RunMode.online);
+      Insight.tag('run_mode', 'web');
+      Insight.event('route_web');
       _goContent(reply.url!);
     } else {
       await widget.storage.setMode(RunMode.offline);
+      Insight.tag('run_mode', 'native');
+      Insight.event('route_native');
       _route(() => const MenuScreen());
     }
   }
@@ -154,6 +162,7 @@ class _BootScreenState extends State<BootScreen> {
   Future<void> _handleOnline() async {
     final online = await widget.probe.isOnline();
     if (!online) {
+      Insight.event('route_offline');
       _setStage(_Stage.done);
       if (!mounted) return;
       _route(() => OfflineWall(onRetry: (_) => _rebuildBoot()));
@@ -163,6 +172,8 @@ class _BootScreenState extends State<BootScreen> {
     // Push URL takes priority
     final pushUrl = await widget.storage.consumePushUrl();
     if (pushUrl != null) {
+      Insight.tag('run_mode', 'web');
+      Insight.event('route_push_link');
       _setStage(_Stage.done);
       await Future.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
@@ -186,6 +197,7 @@ class _BootScreenState extends State<BootScreen> {
       locale: locale,
       pushToken: widget.signal.token,
     );
+    _identifyFromPayload(body);
     final reply = await widget.gateway.fetch(body);
 
     _setStage(_Stage.done);
@@ -193,10 +205,15 @@ class _BootScreenState extends State<BootScreen> {
     if (!mounted) return;
 
     if (reply.ok && reply.url != null) {
+      Insight.tag('run_mode', 'web');
+      Insight.event('route_web');
       _goContent(reply.url!);
     } else if (savedUrl != null) {
+      Insight.tag('run_mode', 'web');
+      Insight.event('route_cached_link');
       _goContent(savedUrl);
     } else {
+      Insight.event('route_offline');
       _route(() => OfflineWall(onRetry: (_) => _rebuildBoot()));
     }
   }
@@ -226,10 +243,13 @@ class _BootScreenState extends State<BootScreen> {
           locale: locale,
           pushToken: widget.signal.token,
         );
+        _identifyFromPayload(body);
         final reply = await widget.gateway.fetch(body);
 
         if (reply.ok && reply.url != null) {
           await widget.storage.setMode(RunMode.online);
+          Insight.tag('run_mode', 'web');
+          Insight.event('route_web');
           _setStage(_Stage.done);
           await Future.delayed(const Duration(milliseconds: 350));
           if (!mounted) return;
@@ -241,11 +261,29 @@ class _BootScreenState extends State<BootScreen> {
       }
     }
 
+    Insight.tag('run_mode', 'native');
+    Insight.event('route_native');
+
     await Future.delayed(const Duration(milliseconds: 300));
     _setStage(_Stage.done);
     await Future.delayed(const Duration(milliseconds: 400));
     if (!mounted) return;
     _route(() => const MenuScreen());
+  }
+
+  /// Extracts af_id + attribution tags from the gateway payload and
+  /// forwards them to Insight so every session is groupable by user.
+  void _identifyFromPayload(Map<String, dynamic> body) {
+    Insight.identify(
+      body['af_id']?.toString(),
+      tags: {
+        'af_status': body['af_status']?.toString() ?? '',
+        'media_source': body['media_source']?.toString() ?? '',
+        'campaign': body['campaign']?.toString() ?? '',
+        'os': body['os']?.toString() ?? '',
+        'locale': body['locale']?.toString() ?? '',
+      },
+    );
   }
 
   Future<void> _goContent(String url) async {
@@ -260,6 +298,16 @@ class _BootScreenState extends State<BootScreen> {
         targetUrl: url,
       );
     } else {
+      // Returning user: no invite this run — classify the notif state so
+      // the `notif_permission` tag is never empty in the dashboard.
+      Insight.tag(
+        'notif_permission',
+        widget.storage.isNotifGranted()
+            ? 'granted'
+            : widget.storage.isNotifOsDenied()
+                ? 'os_denied'
+                : 'snoozed',
+      );
       next = gate.GateScreen(
         url: url,
         storage: widget.storage,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../bridge/insight.dart';
 
 const List<String> _cardImages = [
   'assets/crystal4.webp',
@@ -58,6 +59,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    Insight.screen('game');
+    Insight.event('game_start');
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -127,6 +130,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         _volcanoReaction.forward(from: 0);
 
         if (_matchedPairs == 9) {
+          Insight.event('game_win');
+          Insight.tag('game_moves', _moves.toString());
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted) setState(() => _gameOver = true);
           });

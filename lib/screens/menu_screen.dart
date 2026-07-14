@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../bridge/insight.dart';
 import 'game_screen.dart';
 import 'info_panel.dart';
 
@@ -18,6 +19,7 @@ class _MenuScreenState extends State<MenuScreen>
   @override
   void initState() {
     super.initState();
+    Insight.screen('menu');
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -41,6 +43,7 @@ class _MenuScreenState extends State<MenuScreen>
   }
 
   void _openGame() {
+    Insight.event('menu_open_game');
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => const GameScreen(),

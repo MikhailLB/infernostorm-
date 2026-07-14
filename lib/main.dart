@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app.dart';
+import 'bridge/insight.dart';
 import 'net/blaze_storage.dart';
 import 'net/cloud_gateway.dart';
 import 'net/flow_controller.dart';
@@ -47,15 +48,10 @@ void main() async {
   final gateway = CloudGateway(storage);
   final signal  = SignalService(storage);
 
-  // Microsoft Clarity session recording / heatmaps. Verbose logs only
-  // in debug builds so release logcat stays clean.
-  final clarityConfig = ClarityConfig(
-    projectId: 'xmcu44w75j',
-    logLevel: kDebugMode ? LogLevel.Verbose : LogLevel.None,
-  );
-
+  // Microsoft Clarity — session replay + funnel events. Everything else
+  // goes through the crash-safe Insight facade elsewhere in the app.
   runApp(ClarityWidget(
-    clarityConfig: clarityConfig,
+    clarityConfig: Insight.config,
     app: InfernoStormApp(
       storage: storage,
       probe:   probe,

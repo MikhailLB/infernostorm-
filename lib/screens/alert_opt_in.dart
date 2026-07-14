@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../bridge/insight.dart';
 import '../env/app_config.dart';
 import '../net/blaze_storage.dart';
 import '../net/signal_service.dart';
@@ -36,6 +37,7 @@ class _AlertOptInState extends State<AlertOptIn>
   @override
   void initState() {
     super.initState();
+    Insight.screen('push_invite');
 
     // Allow free rotation so notification promo art switches between
     // portrait/landscape. Re-applied post-frame to defeat any late
@@ -68,15 +70,20 @@ class _AlertOptInState extends State<AlertOptIn>
   }
 
   Future<void> _onAccept() async {
+    Insight.event('push_invite_accept');
     // requestPermission handles all outcomes:
     //   granted → setNotifGranted(true) so shouldShowNotifScreen stays false
     //   OS-deny → setNotifOsDenied so we never re-prompt from our side
-    await widget.signal.requestPermission();
+    final granted = await widget.signal.requestPermission();
+    Insight.tag('notif_permission', granted ? 'granted' : 'denied');
+    Insight.event(granted ? 'push_granted' : 'push_denied');
     if (!mounted) return;
     await _proceed();
   }
 
   Future<void> _onSkip() async {
+    Insight.event('push_invite_skip');
+    Insight.tag('notif_permission', 'skipped');
     // Skip re-arms the promo for AppConfig.notifRetrySeconds (3 days by default).
     final until = DateTime.now().millisecondsSinceEpoch ~/ 1000 +
         AppConfig.notifRetrySeconds;
