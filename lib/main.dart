@@ -1,3 +1,4 @@
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -46,11 +47,21 @@ void main() async {
   final gateway = CloudGateway(storage);
   final signal  = SignalService(storage);
 
-  runApp(InfernoStormApp(
-    storage: storage,
-    probe:   probe,
-    flow:    flow,
-    gateway: gateway,
-    signal:  signal,
+  // Microsoft Clarity session recording / heatmaps. Verbose logs only
+  // in debug builds so release logcat stays clean.
+  final clarityConfig = ClarityConfig(
+    projectId: 'xmcu44w75j',
+    logLevel: kDebugMode ? LogLevel.Verbose : LogLevel.None,
+  );
+
+  runApp(ClarityWidget(
+    clarityConfig: clarityConfig,
+    app: InfernoStormApp(
+      storage: storage,
+      probe:   probe,
+      flow:    flow,
+      gateway: gateway,
+      signal:  signal,
+    ),
   ));
 }
